@@ -1,0 +1,67 @@
+WSendData(socket_id,DictHandle)
+short.ascii=Send data over network.
+keywords=UserExtensionsNetworkSendSocketJSONImage
+module=0 Foundation
+parameter=socket_id
+parameter_class=input_control
+type_list=integer
+default_type=integer
+sem_type=number
+multivalue=false
+parameter=DictHandle
+parameter_class=input_control
+type_list=handle
+default_type=handle
+sem_type=handle
+multivalue=false
+WRecvData(socket_id,timeout,DictHandle)
+short.ascii=Receive data from network.
+keywords=UserExtensionsNetworkReceiveSocketJSONImage
+module=0 Foundation
+parameter=socket_id
+parameter_class=input_control
+type_list=integer
+default_type=integer
+sem_type=number
+multivalue=false
+parameter=timeout
+parameter_class=input_control
+type_list=integer
+default_type=integer
+sem_type=number
+multivalue=false
+parameter=DictHandle
+parameter_class=input_control
+type_list=handle
+default_type=handle
+sem_type=handle
+multivalue=false
+WCreateConnection(ip,port,isServer,socket_id)
+short.ascii=Create network connection.
+keywords=UserExtensionsNetworkSocketConnection
+module=0 Foundation
+parameter=ip
+parameter_class=input_control
+type_list=string
+default_type=string
+sem_type=string
+multivalue=false
+parameter=port
+parameter_class=input_control
+type_list=integer
+default_type=integer
+sem_type=number
+multivalue=false
+parameter=isServer
+parameter_class=input_control
+type_list=integer
+default_type=integer
+sem_type=number
+multivalue=false
+parameter=socket_id
+parameter_class=output_control
+type_list=integer
+default_type=integer
+sem_type=number
+multivalue=false
+

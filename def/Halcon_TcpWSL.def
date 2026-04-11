@@ -1,0 +1,172 @@
+WCreateConnection<- CCreateConnection[::ip,port,isServer:socket_id]
+short.german
+  Create network connection.;
+  
+short.english
+  Create network connection.;
+
+module
+  foundation;
+
+chapter.german
+  BenutzerErweiterungen;
+
+chapter.english
+  UserExtensions;
+
+keywords.english
+  UserExtensions, Network, Socket, Connection;
+
+parallelization
+  process_exclusively: false;
+  process_locally:     false;
+  process_mutual:      false;
+  method:              none;
+
+parameter
+  ip:                 input_control;
+  default_type:       string;
+  multivalue:         false;
+  sem_type:           string;
+  type_list:          string;
+
+parameter
+  port:               input_control;
+  default_type:       integer;
+  multivalue:         false;
+  sem_type:           number;
+  type_list:          integer;
+
+parameter
+  isServer:           input_control;
+  default_type:       integer;
+  multivalue:         false;
+  sem_type:           number;
+  type_list:          integer;
+
+parameter
+  socket_id:          output_control;
+  default_type:       integer;
+  multivalue:         false;
+  sem_type:           number;
+  type_list:          integer;
+
+
+WRecvData<- CRecvData[::socket_id,timeout,DictHandle:]
+short.german
+  Receive data from network.;
+  
+short.english
+  Receive data from network.;
+
+module
+  foundation;
+
+chapter.german
+  BenutzerErweiterungen;
+
+chapter.english
+  UserExtensions;
+
+keywords.english
+  UserExtensions, Network, Receive, Socket, JSON, Image;
+
+parallelization
+  process_exclusively: false;
+  process_locally:     false;
+  process_mutual:      false;
+  method:              none;
+
+parameter
+  socket_id:          input_control;
+  default_type:       integer;
+  multivalue:         false;
+  sem_type:           number;
+  type_list:          integer;
+
+parameter
+  timeout:            input_control;
+  default_type:       integer;
+  multivalue:         false;
+  sem_type:           number;
+  type_list:          integer;
+
+parameter
+  DictHandle:         input_control;
+  default_type:       handle;
+  multivalue:         false;
+  sem_type:           handle;
+  type_list:          handle;
+
+
+WCloseConnection<- CCloseConnection[::socket_id:]
+short.german
+  Close network connection.;
+  
+short.english
+  Close network connection.;
+
+module
+  foundation;
+
+chapter.german
+  BenutzerErweiterungen;
+
+chapter.english
+  UserExtensions;
+
+keywords.english
+  UserExtensions, Network, Close, Socket, Connection;
+
+parallelization
+  process_exclusively: false;
+  process_locally:     false;
+  process_mutual:      false;
+  method:              none;
+
+parameter
+  socket_id:          input_control;
+  default_type:       integer;
+  multivalue:         false;
+  sem_type:           number;
+  type_list:          integer;
+
+
+WSendData<- CSendData[::socket_id,DictHandle:]
+short.german
+  Send data over network.;
+  
+short.english
+  Send data over network.;
+
+module
+  foundation;
+
+chapter.german
+  BenutzerErweiterungen;
+
+chapter.english
+  UserExtensions;
+
+keywords.english
+  UserExtensions, Network, Send, Socket, JSON, Image;
+
+parallelization
+  process_exclusively: false;
+  process_locally:     false;
+  process_mutual:      false;
+  method:              none;
+
+parameter
+  socket_id:          input_control;
+  default_type:       integer;
+  multivalue:         false;
+  sem_type:           number;
+  type_list:          integer;
+
+parameter
+  DictHandle:         input_control;
+  default_type:       handle;
+  multivalue:         false;
+  sem_type:           handle;
+  type_list:          handle;

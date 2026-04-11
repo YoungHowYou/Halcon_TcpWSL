@@ -1,0 +1,307 @@
+# WSL/Windows TCP通信库 - 项目说明
+
+## 项目概述
+
+本项目根据提供的TCP通信协议设计文档，实现了WSL端和Windows端的静态库，支持跨平台TCP通信,另外windows端我按惯例给Halcon做了拓展包。
+
+## 已实现功能
+
+### ✅ 核心功能
+
+1. **TCP通信接口**
+   - `CreateConnection`: 创建连接（支持服务端和客户端模式）
+   - `SendData`: 发送数据（队列缓存，非阻塞）
+   - `RecvData`: 接收数据（支持超时）
+   - `CloseConnection`: 关闭连接
+
+2. **队列缓存机制**
+   - 独立的发送队列和接收队列
+   - 线程安全的环形队列实现
+   - 队列满时自动丢弃最旧数据包
+
+3. **超时控制**
+   - 接收支持毫秒级超时
+   - 支持永久阻塞、超时等待、非阻塞三种模式
+
+4. **跨平台支持**
+   - WSL/Linux端实现（使用pthread）
+   - Windows端实现（使用Win32 API）
+   - 统一的接口头文件
+
+### ✅ 构建系统
+
+1. **CMake构建**
+   - 支持静态库和共享库构建
+   - 支持Release和Debug配置
+   - 可选构建示例程序
+
+2. **构建脚本**
+   - Linux/macOS: `build.sh`
+   - Windows: `build.bat`
+
+### ✅ 示例程序
+
+1. **WSL端示例**
+   - `server_wsl.cpp`: 服务端示例
+   - `client_wsl.cpp`: 客户端示例
+
+2. **Windows端示例**
+   - `server_windows.cpp`: 服务端示例
+   - `client_windows.cpp`: 客户端示例
+
+### ✅ 文档
+
+1. **README.md**: 项目说明文档
+2. **使用说明.md**: 详细的使用指南
+3. **项目说明.md**: 本文件
+
+## 项目结构
+
+```
+tcp_communication_lib/
+├── CMakeLists.txt              # 根CMake文件
+├── build.sh                    # Linux/macOS构建脚本
+├── build.bat                   # Windows构建脚本
+├── README.md                   # 项目说明
+├── 项目说明.md                 # 本文件
+├── docs/
+│   └── 使用说明.md             # 详细使用说明
+├── wsl_lib/                    # WSL端库
+│   ├── CMakeLists.txt
+│   ├── include/
+│   │   ├── network.h
+│   │   ├── network_config.h
+│   │   └── queue.h
+│   └── src/
+│       └── network.cpp
+├── windows_lib/                # Windows端库
+│   ├── CMakeLists.txt
+│   ├── include/
+│   │   ├── network.h
+│   │   ├── network_config.h
+│   │   └── queue.h
+│   └── src/
+│       └── network.cpp
+└── examples/                   # 示例程序
+    ├── CMakeLists.txt
+    ├── server_wsl.cpp
+    ├── client_wsl.cpp
+    ├── server_windows.cpp
+    └── client_windows.cpp
+```
+
+## 快速开始
+
+### 1. 构建库文件
+
+#### Linux/WSL:
+```bash
+./build.sh
+```
+
+#### Windows:
+```cmd
+build.bat
+```
+
+### 2. 使用库文件
+
+#### 在你的项目中包含头文件:
+```cpp
+#include "network.h"
+```
+
+#### 链接库文件:
+- WSL端: `libwsl_tcp_communication.a`
+- Windows端: `windows_tcp_communication.lib`
+
+## 核心特性
+
+### 1. 队列缓存机制
+
+```c
+// 队列大小可配置
+#define MAX_QUEUE_SIZE 8  // 默认8个数据包
+
+// 队列满时自动丢弃最旧数据包
+// 保证内存使用可控
+```
+
+### 2. 超时控制
+
+```c
+// 三种超时模式
+RecvData(socket, &json, &data, &len, -1);   // 永久阻塞
+RecvData(socket, &json, &data, &len, 100);  // 100ms超时
+RecvData(socket, &json, &data, &len, 0);    // 非阻塞
+```
+
+### 3. 数据帧格式
+
+```
++--------+-----------+-----------+
+| 帧头   | JSON数据  | 二进制数据|
+| 12字节 | N字节     | M字节     |
++--------+-----------+-----------+
+```
+
+**帧头结构**:
+```c
+typedef struct {
+    uint32_t magic;      // 魔数 0xDEADBEEF
+    uint32_t json_len;   // JSON长度
+    uint32_t data_len;   // 数据长度
+} Header;
+```
+
+## 性能特点
+
+### 1. 无心跳设计
+- 减少网络开销
+- 降低CPU占用
+
+### 2. 队列缓存
+- 发送和接收异步进行
+- 解耦应用层和网络层
+
+### 3. 断连静默处理
+- 网络异常时自动清理
+- 不阻塞应用层
+
+### 4. 资源轻量
+- 最小内存占用
+- 低开销设计
+
+## 使用场景
+
+### 1. 实时数据传输
+- 视频流传输
+- 传感器数据采集
+- 实时监控
+
+### 2. 控制指令
+- 远程控制
+- 设备指令
+- 状态同步
+
+### 3. 文件传输
+- 配置文件
+- 日志文件
+- 媒体文件
+
+### 4. WSL与Windows通信
+- WSL2访问Windows服务
+- Windows访问WSL服务
+- 双向数据交换
+
+## 优势
+
+### 1. 简洁易用
+- 4个核心接口
+- 统一的跨平台API
+- 详细的示例代码
+
+### 2. 可靠性
+- 队列缓存机制
+- 超时控制
+- 自动资源清理
+
+### 3. 灵活性
+- 队列大小可配置
+- 超时时间可调
+- 支持多种使用模式
+
+### 4. 高性能
+- 零拷贝设计
+- 异步网络I/O
+- 最小化锁竞争
+
+## 技术栈
+
+### WSL端
+- **语言**: C++11
+- **线程**: pthread
+- **网络**: BSD Socket
+- **构建**: CMake
+
+### Windows端
+- **语言**: C++11
+- **线程**: Win32 Thread
+- **网络**: Winsock2
+- **构建**: CMake
+
+## 兼容性
+
+### 平台支持
+- ✅ WSL2 (Ubuntu 18.04+)
+- ✅ Linux (Ubuntu 18.04+, CentOS 7+)
+- ✅ Windows 10/11
+- ✅ Windows Server 2016+
+
+### 编译器支持
+- ✅ GCC 7.0+
+- ✅ Clang 6.0+
+- ✅ MSVC 2017+
+- ✅ MinGW-w64
+
+## 版本信息
+
+- **版本**: v2.0
+- **发布日期**: 2026-01-04
+- **协议版本**: v2.0
+
+## 更新日志
+
+### v2.0 (2026-01-04)
+- ✅ 新增接收超时功能
+- ✅ 实现队列缓存机制
+- ✅ 支持队列满时自动丢弃
+- ✅ 队列容量可配置
+- ✅ 完整的跨平台实现
+- ✅ 详细的文档和示例
+
+## 待办事项
+
+### 计划中的功能
+- [ ] SSL/TLS加密支持
+- [ ] 多路复用（一个端口服务多个客户端）
+- [ ] 数据压缩
+- [ ] 性能监控接口
+- [ ] Python绑定
+
+### 优化项
+- [ ] 零拷贝优化
+- [ ] 内存池管理
+- [ ] 批处理接口
+- [ ] 异步回调接口
+
+## 贡献指南
+
+欢迎提交Issue和Pull Request！
+
+### 开发环境设置
+
+1. Fork本项目
+2. 创建特性分支
+3. 提交更改
+4. 推送到分支
+5. 创建Pull Request
+
+### 代码规范
+
+- 使用C++11标准
+- 遵循Google C++ Style Guide
+- 添加必要的注释
+- 编写单元测试
+
+## 许可证
+
+MIT License
+
+## 联系方式
+
+如有问题或建议，请提交Issue。
+
+## 致谢
+
+感谢所有为该项目做出贡献的开发者！
