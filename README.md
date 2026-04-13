@@ -28,6 +28,14 @@
    - Windows端实现（使用Win32 API）
    - 统一的接口头文件
 
+5. **H.264 视频编解码**
+   - 基于 Intel oneVPL 硬件加速编码/解码（自动回退到软件模式）
+   - 编码端：HALCON 3通道 RGB 图像 → H.264 裸流（固定 1280x720）
+   - 解码端：H.264 裸流 → HALCON 3通道 RGB 图像（分辨率自动检测）
+   - 符合 DJI-H264 标准（每帧附带 AUD NAL 单元）
+   - 低延迟配置：GopRefDist=1, AsyncDepth=1, 单参考帧
+   - 色彩空间转换：libyuv 加速的 RGB ↔ NV12 转换
+
 ### ✅ 构建系统
 
 1. **CMake构建**
@@ -55,39 +63,46 @@
 2. **使用说明.md**: 详细的使用指南
 3. **项目说明.md**: 本文件
 
-## 项目结构
+## HALCON 扩展包项目结构
 
 ```
-tcp_communication_lib/
-├── CMakeLists.txt              # 根CMake文件
-├── build.sh                    # Linux/macOS构建脚本
-├── build.bat                   # Windows构建脚本
-├── README.md                   # 项目说明
-├── 项目说明.md                 # 本文件
-├── docs/
-│   └── 使用说明.md             # 详细使用说明
-├── wsl_lib/                    # WSL端库
-│   ├── CMakeLists.txt
+Halcon_TcpWSL/
+├── CMakeLists.txt                          # CMake 构建文件
+├── README.md                               # 本文件
+├── 项目说明.md                             # 详细项目说明
+├── def/
+│   └── Halcon_TcpWSL.def                   # HALCON 扩展包定义文件
+├── include/
+│   ├── Halcon_TcpWSL.h                     # HALCON 扩展包导出接口
+│   ├── network.h                           # TCP 网络接口
+│   ├── network_config.h                    # 网络配置常量
+│   ├── queue.h                             # 线程安全环形队列
+│   ├── encoder_impl.h                      # H.264 编码器内部实现
+│   └── decoder_impl.h                      # H.264 解码器内部实现
+├── source/
+│   ├── Halcon_TcpWSL.cpp                   # HALCON 扩展包主入口
+│   ├── network.cpp                         # TCP 网络实现
+│   ├── encoder_impl.cpp                    # H.264 编码器实现（oneVPL）
+│   ├── encoder_api.cpp                     # 编码器 C API 封装
+│   ├── decoder_impl.cpp                    # H.264 解码器实现（oneVPL）
+│   └── decoder_api.cpp                     # 解码器 C API 封装
+├── 3rd/DjiH264Encoder/
 │   ├── include/
-│   │   ├── network.h
-│   │   ├── network_config.h
-│   │   └── queue.h
-│   └── src/
-│       └── network.cpp
-├── windows_lib/                # Windows端库
-│   ├── CMakeLists.txt
-│   ├── include/
-│   │   ├── network.h
-│   │   ├── network_config.h
-│   │   └── queue.h
-│   └── src/
-│       └── network.cpp
-└── examples/                   # 示例程序
-    ├── CMakeLists.txt
-    ├── server_wsl.cpp
-    ├── client_wsl.cpp
-    ├── server_windows.cpp
-    └── client_windows.cpp
+│   │   ├── dji_encoder.h                   # 编码器/解码器公共 C API 头文件
+│   │   ├── libyuv.h                        # libyuv 色彩空间转换
+│   │   ├── libyuv/                         # libyuv 详细头文件
+│   │   └── vpl/                            # Intel oneVPL 头文件
+│   ├── lib/
+│   │   ├── vpl.lib                         # oneVPL 导入库（需 libvpl.dll）
+│   │   └── yuv.lib                         # libyuv 静态库
+│   └── bin/
+│       └── libvpl.dll                      # oneVPL 运行时 DLL
+├── bin/                                    # 构建输出目录
+│   ├── Halcon_TcpWSL.dll                   # HALCON 扩展包主 DLL
+│   └── libvpl.dll                          # 运行时依赖（需与主 DLL 同目录）
+└── examples/
+    ├── h264_sender.hdev                    # H.264 编码发送端示例
+    └── h264_receiver.hdev                  # H.264 解码接收端示例
 ```
 
 ## 快速开始
@@ -172,10 +187,70 @@ typedef struct {
 - 最小内存占用
 - 低开销设计
 
+## H.264 编解码使用说明
+
+### 数据流
+
+```
+发送端: HALCON 3通道图 → RGB → ARGB → NV12 → H.264 编码 → TCP 发送
+接收端: TCP 接收 → H.264 解码 → NV12 → ARGB → R/G/B → HALCON 3通道图
+```
+
+### HALCON HDevelop 用法
+
+通过 JSON 元数据中 `通道` 字段设为 `264` 来启用 H.264 模式：
+
+**发送端**（编码）：
+```
+* 创建连接（自动初始化编码器和解码器）
+WCreateConnection ('127.0.0.1', 5000, 1, SocketID)
+
+* 设置 H.264 模式
+create_dict (DataDict)
+set_dict_tuple (DataDict, '通道', 264)
+set_dict_tuple (DataDict, '宽', 1280)
+set_dict_tuple (DataDict, '高', 720)
+set_dict_tuple (DataDict, '位深', 1)
+
+* 发送图像（必须是 1280x720 的 3 通道图像）
+WSendData (SocketID, SendDict)
+```
+
+**接收端**（解码）：
+```
+* 连接到发送端（自动初始化解码器）
+WCreateConnection ('127.0.0.1', 5000, 0, SocketID)
+
+* 接收并自动解码为 3 通道图像
+WRecvData (SocketID, 5000, RecvDict)
+get_dict_object (Image, RecvDict, '图')
+```
+
+### 运行时依赖
+
+- `libvpl.dll`：Intel oneVPL 运行时，需放置在 HALCON 的 `bin/x64-win64/` 目录下
+- Intel GPU 驱动（硬件加速模式），无 Intel GPU 时自动回退到软件编解码
+
+### 注意事项
+
+- 编码器固定分辨率 1280x720，发送前需缩放图像
+- 解码器自动从首个关键帧（IDR）检测分辨率
+- 首帧解码可能输出黑图（解码器需缓冲首帧用于初始化），从第 2 帧开始正常
+- 编解码 pipeline 有 1-2 帧的固有延迟
+
+### 错误码
+
+| 错误码 | 含义 |
+|--------|------|
+| 10999  | H.264 编码器未初始化 |
+| 10998  | 图像尺寸不匹配（需 1280x720） |
+| 10997  | H.264 解码器未初始化 |
+| 10500+ | H.264 编码失败（10500 + 编码器错误码） |
+
 ## 使用场景
 
 ### 1. 实时数据传输
-- 视频流传输
+- H.264 视频流传输（低带宽、高质量）
 - 传感器数据采集
 - 实时监控
 
@@ -246,11 +321,19 @@ typedef struct {
 
 ## 版本信息
 
-- **版本**: v2.0
-- **发布日期**: 2026-01-04
+- **版本**: v3.0
+- **发布日期**: 2026-04-12
 - **协议版本**: v2.0
 
 ## 更新日志
+
+### v3.0 (2026-04-12)
+- ✅ 新增 H.264 编码功能（发送端，Intel oneVPL 硬件加速）
+- ✅ 新增 H.264 解码功能（接收端，自动输出 3 通道 RGB 图像）
+- ✅ 符合 DJI-H264 标准（AUD NAL 单元）
+- ✅ 色彩空间转换（libyuv：RGB ↔ NV12）
+- ✅ D3D11 Debug 层自动回退（兼容未安装图形工具的环境）
+- ✅ 编解码器 HDevelop 示例（h264_sender.hdev / h264_receiver.hdev）
 
 ### v2.0 (2026-01-04)
 - ✅ 新增接收超时功能
@@ -265,7 +348,7 @@ typedef struct {
 ### 计划中的功能
 - [ ] SSL/TLS加密支持
 - [ ] 多路复用（一个端口服务多个客户端）
-- [ ] 数据压缩
+- [ ] 动态分辨率支持（编码端）
 - [ ] 性能监控接口
 - [ ] Python绑定
 

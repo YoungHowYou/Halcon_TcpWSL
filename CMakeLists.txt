@@ -63,13 +63,17 @@ HALCON_AddExtensionPackage(Halcon_TcpWSL
     source/network.cpp
     source/Halcon_TcpWSL.cpp
     source/Halcon_TcpWSL.c
+    source/encoder_impl.cpp
+    source/encoder_api.cpp
+    source/decoder_impl.cpp
+    source/decoder_api.cpp
 
   CHAPTERS
     userextensions
   CLASSES
     TcpWSL
   OPERATORS
-   
+
 )
 
 ##三方库包含
@@ -90,7 +94,7 @@ set_source_files_properties(${DEF_FILES} PROPERTIES
 )
 
 
-target_include_directories(${ProjectName} 
+target_include_directories(${ProjectName}
     PUBLIC
         $<BUILD_INTERFACE:${HALCON_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -99,10 +103,21 @@ target_include_directories(${ProjectName}
 
 
 )
-target_link_libraries(${ProjectName} 
+
+# DjiH264Encoder 编译宏定义（静态编译，不导出符号）
+target_compile_definitions(${ProjectName} PRIVATE
+    _CRT_SECURE_NO_WARNINGS
+    NOMINMAX
+    WIN32_LEAN_AND_MEAN
+)
+
+target_link_libraries(${ProjectName}
     ${HALCON_LIB_DIR}/halconcpp.lib
-    #往后增加3方库的lib文件
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rd/DjiH264Encoder/lib/DjiH264Encoder.lib
+    #DjiH264Encoder 依赖库（直接编译源码，不再使用 DjiH264Encoder.lib）
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rd/DjiH264Encoder/lib/vpl.lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rd/DjiH264Encoder/lib/yuv.lib
+    d3d11
+    dxgi
 
 )
 

@@ -1,3 +1,4 @@
 socket_id,DictHandle:userextensions:UserExtensions:
+socket_id:userextensions:UserExtensions:
 socket_id,timeout,DictHandle:userextensions:UserExtensions:
 ip,port,isServer,socket_id:userextensions:UserExtensions:

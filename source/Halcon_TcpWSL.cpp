@@ -5,10 +5,13 @@
 #include "HalconCpp.h"
 using namespace HalconCpp;
 
-// ==================== H264编码器全局变量 ====================
+// ==================== H264编码器/解码器全局变量 ====================
 #include "dji_encoder.h"
 static DJIEncoderHandle g_h264_encoder = nullptr;  // H264编码器句柄
 static bool g_encoder_initialized = false;         // 编码器初始化标志
+
+static DJIDecoderHandle g_h264_decoder = nullptr;  // H264解码器句柄
+static bool g_decoder_initialized = false;         // 解码器初始化标志
 
 // 编码器配置（默认：30fps, 6000kbps）
 static DJIEncoderConfig g_encoder_config = {30, 6000, 30};
@@ -48,6 +51,25 @@ Herror HCreateConnection(Hproc_handle proc_handle)
                 DJI_Encoder_Destroy(g_h264_encoder);
                 g_h264_encoder = nullptr;
                 // 不返回错误，让TCP连接继续工作（只是没有H264功能）
+            }
+        }
+    }
+
+    // ==================== 初始化H264解码器 ====================
+    if (ret == 0 && !g_decoder_initialized)
+    {
+        g_h264_decoder = DJI_Decoder_Create();
+        if (g_h264_decoder)
+        {
+            int dec_ret = DJI_Decoder_Init(g_h264_decoder);
+            if (dec_ret == DJI_OK)
+            {
+                g_decoder_initialized = true;
+            }
+            else
+            {
+                DJI_Decoder_Destroy(g_h264_decoder);
+                g_h264_decoder = nullptr;
             }
         }
     }
@@ -106,8 +128,37 @@ Herror HRecvData(Hproc_handle proc_handle)
             SetDictTuple(hv_DictHandle, u8"命令", dict_json);
             HObject Image;
 
-            // char *output_str = (char *)HAlloc(proc_handle, 1024);
-            if (通道.L() == 1)
+            if (通道.L() == 264)  // ==================== H264解码模式 ====================
+            {
+                if (!g_decoder_initialized || g_h264_decoder == nullptr)
+                {
+                    free(jsontext);
+                    free(data);
+                    return 10000 + 997;  // H264解码器未初始化错误
+                }
+
+                DJIDecoderOutput dec_output;
+                int dec_ret = DJI_Decoder_Decode(g_h264_decoder,
+                                                  (const uint8_t*)data,
+                                                  (int)out_length,
+                                                  &dec_output);
+
+                if (dec_ret == DJI_OK && dec_output.r_plane != nullptr)
+                {
+                    // 解码成功，生成3通道图像
+                    HObject ImageR, ImageG, ImageB;
+                    GenImage1(&ImageR, "byte", dec_output.width, dec_output.height, (__int64)dec_output.r_plane);
+                    GenImage1(&ImageG, "byte", dec_output.width, dec_output.height, (__int64)dec_output.g_plane);
+                    GenImage1(&ImageB, "byte", dec_output.width, dec_output.height, (__int64)dec_output.b_plane);
+                    Compose3(ImageR, ImageG, ImageB, &Image);
+                }
+                else
+                {
+                    // 解码器需要更多数据或失败，生成空图像占位
+                    GenImageConst(&Image, "byte", H264_WIDTH, H264_HEIGHT);
+                }
+            }
+            else if (通道.L() == 1)
             {
                 if (位深.L() == 1)
                 {
@@ -131,15 +182,12 @@ Herror HRecvData(Hproc_handle proc_handle)
                     GenImage1(&ImageR, "byte", 宽.L(), 高.L(), (__int64)data);
                     GenImage1(&ImageG, "byte", 宽.L(), 高.L(), (__int64)(data + Tw));
                     GenImage1(&ImageB, "byte", 宽.L(), 高.L(), (__int64)(data + Tw * 2));
-
-                    // GenImage3(&Image, "byte", 宽, 高,  (__int64)data,  (__int64)data + Tw,  (__int64)data + Tw * 2);
                 }
                 else
                 {
                     GenImage1(&ImageR, "uint2", 宽.L(), 高.L(), (__int64)data);
                     GenImage1(&ImageG, "uint2", 宽.L(), 高.L(), (__int64)(data + Tw));
                     GenImage1(&ImageB, "uint2", 宽.L(), 高.L(), (__int64)(data + Tw * 2));
-                    // GenImage3(&Image, "uint2", 宽, 高,  (__int64)data,  (__int64)data + Tw,  (__int64)data + Tw * 2);
                 }
                 Compose3(ImageR, ImageG, ImageB, &Image);
             }
@@ -308,6 +356,14 @@ Herror CCloseConnection(Hproc_handle proc_handle)
         DJI_Encoder_Destroy(g_h264_encoder);
         g_h264_encoder = nullptr;
         g_encoder_initialized = false;
+    }
+
+    // ==================== 销毁H264解码器 ====================
+    if (g_h264_decoder != nullptr)
+    {
+        DJI_Decoder_Destroy(g_h264_decoder);
+        g_h264_decoder = nullptr;
+        g_decoder_initialized = false;
     }
     
     return H_MSG_TRUE;

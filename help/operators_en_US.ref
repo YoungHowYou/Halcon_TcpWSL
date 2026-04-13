@@ -14,6 +14,16 @@ type_list=handle
 default_type=handle
 sem_type=handle
 multivalue=false
+WCloseConnection(socket_id)
+short.ascii=Close network connection.
+keywords=UserExtensionsNetworkCloseSocketConnection
+module=0 Foundation
+parameter=socket_id
+parameter_class=input_control
+type_list=integer
+default_type=integer
+sem_type=number
+multivalue=false
 WRecvData(socket_id,timeout,DictHandle)
 short.ascii=Receive data from network.
 keywords=UserExtensionsNetworkReceiveSocketJSONImage

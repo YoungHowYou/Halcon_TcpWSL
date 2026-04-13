@@ -7,12 +7,8 @@
 extern "C" {
 #endif
 
-/* 导出宏定义 */
-#ifdef DJI_ENCODER_EXPORTS
-    #define DJI_API __declspec(dllexport)
-#else
-    #define DJI_API __declspec(dllimport)
-#endif
+/* 静态编译，无需导出/导入 */
+#define DJI_API
 
 /* 不透明句柄类型（封装 C++ 对象） */
 typedef struct DJIEncoderInternal* DJIEncoderHandle;
@@ -55,7 +51,24 @@ typedef struct {
 #define DJI_ENCODER_VERSION_MINOR 0
 #define DJI_ENCODER_VERSION_PATCH 0
 
-/*=================== API 函数声明 ===================*/
+/* =================== 解码器相关定义 =================== */
+
+/* 不透明解码器句柄类型 */
+typedef struct DJIDecoderInternal* DJIDecoderHandle;
+
+/* 解码器特有错误码 */
+#define DJI_DECODER_NEED_MORE_DATA  1  /* 解码器需要更多数据（非错误） */
+
+/* 解码输出结构体（3通道 RGB 平面） */
+typedef struct {
+    uint8_t* r_plane;       /* 红色通道指针（内部缓冲区，只读） */
+    uint8_t* g_plane;       /* 绿色通道指针 */
+    uint8_t* b_plane;       /* 蓝色通道指针 */
+    int width;              /* 图像宽度 */
+    int height;             /* 图像高度 */
+} DJIDecoderOutput;
+
+/*=================== 编码器 API 函数声明 ===================*/
 
 /**
  * @brief 创建编码器实例
@@ -107,6 +120,50 @@ DJI_API const char* DJI_Encoder_GetVersion(void);
  * @brief 获取错误码描述字符串
  */
 DJI_API const char* DJI_Encoder_GetErrorString(int error_code);
+
+/*=================== 解码器 API 函数声明 ===================*/
+
+/**
+ * @brief 创建解码器实例
+ * @return 解码器句柄，失败返回 NULL
+ */
+DJI_API DJIDecoderHandle DJI_Decoder_Create(void);
+
+/**
+ * @brief 初始化解码器（分辨率自动从首个关键帧检测）
+ * @param handle 解码器句柄
+ * @return 错误码，DJI_OK 表示成功
+ */
+DJI_API int DJI_Decoder_Init(DJIDecoderHandle handle);
+
+/**
+ * @brief 解码一帧 H.264 数据
+ * @param handle 解码器句柄
+ * @param h264_data H.264 裸流数据指针
+ * @param h264_size 数据长度（字节）
+ * @param output 输出结构体，由函数填充。output 中的指针指向内部缓冲区，
+ *               仅在下次调用 DJI_Decoder_Decode 或 DJI_Decoder_Destroy 前有效。
+ * @return DJI_OK 表示成功解码出一帧，DJI_DECODER_NEED_MORE_DATA 表示需要更多数据，
+ *         负数表示错误
+ */
+DJI_API int DJI_Decoder_Decode(DJIDecoderHandle handle,
+                                const uint8_t* h264_data,
+                                int h264_size,
+                                DJIDecoderOutput* output);
+
+/**
+ * @brief 冲刷解码器，获取缓冲的帧
+ * @param handle 解码器句柄
+ * @param output 输出结构体
+ * @return 1 表示有输出数据，0 表示没有更多数据，负数表示错误
+ */
+DJI_API int DJI_Decoder_Flush(DJIDecoderHandle handle, DJIDecoderOutput* output);
+
+/**
+ * @brief 销毁解码器，释放所有资源
+ * @param handle 解码器句柄，销毁后句柄失效，不可再用
+ */
+DJI_API void DJI_Decoder_Destroy(DJIDecoderHandle handle);
 
 #ifdef __cplusplus
 }

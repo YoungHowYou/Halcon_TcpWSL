@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="24.11.1.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>* ============================================================</c>
+<c>* h264_receiver.hdev</c>
+<c>* H264 解码接收端示例</c>
+<c>* TCP 接收 -&gt; H264 解码 -&gt; 3 通道 RGB 图像显示</c>
+<c>* ============================================================</c>
+<c></c>
+<c>* 配置参数</c>
+<l>IP := '127.0.0.1'</l>
+<l>Port := 5000</l>
+<l>IsServer := 0</l>
+<c></c>
+<c>* 创建 TCP 连接（客户端模式，同时初始化 H264 解码器）</c>
+<l>WCreateConnection (IP, Port, IsServer, SocketID)</l>
+<c></c>
+<c>* 打开窗口用于显示解码后的图像</c>
+<l>* dev_open_window (0, 0, 1280, 720, 'black', WindowHandle)</l>
+<l>dev_get_window (WindowHandle)</l>
+<l>dev_update_window ('off')</l>
+<c></c>
+<c>* 接收字典</c>
+<l>create_dict (RecvDict)</l>
+<c></c>
+<c>* 循环接收并解码显示</c>
+<l>while (true)</l>
+<c>    * 接收数据（超时 5000ms）</c>
+<l>    WRecvData (SocketID, 5000, RecvDict)</l>
+<c></c>
+<c>    * 获取命令字典</c>
+<l>    get_dict_tuple (RecvDict, '命令', CmdDict)</l>
+<l>    get_dict_tuple (CmdDict, 'CMD', CMD)</l>
+<c></c>
+<c>    * CMD=0 表示图像数据</c>
+<l>    if (CMD == 0)</l>
+<c>        * 获取解码后的 3 通道图像</c>
+<l>        get_dict_object (Image, RecvDict, '图')</l>
+<c></c>
+<c>        * 显示图像</c>
+<l>        dev_display (Image)</l>
+<c></c>
+<c>        * 获取图像信息</c>
+<l>        count_channels (Image, NumChannels)</l>
+<l>        get_image_size (Image, Width, Height)</l>
+<l>        dev_set_color ('green')</l>
+<l>        set_tposition (WindowHandle, 10, 10)</l>
+<l>        write_string (WindowHandle, 'H264 Decoded: ' + Width + 'x' + Height + ' CH:' + NumChannels)</l>
+<l>    endif</l>
+<l>endwhile</l>
+<c></c>
+<c>* 关闭连接</c>
+<l>WCloseConnection (SocketID)</l>
+<l>dev_close_window ()</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

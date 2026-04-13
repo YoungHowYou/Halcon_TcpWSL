@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/DjiH264Encoder/src/encoder_impl.cpp\" \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/source/\")",
+      "Bash(cp \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/DjiH264Encoder/src/encoder_api.cpp\" \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/source/\")",
+      "Bash(cp \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/DjiH264Encoder/src/encoder_impl.h\" \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/include/\")",
+      "Bash(cp -r \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/DjiH264Encoder/3rd/include/vpl\" \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/3rd/DjiH264Encoder/include/\")",
+      "Bash(cp -r \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/DjiH264Encoder/3rd/include/libyuv\" \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/3rd/DjiH264Encoder/include/\")",
+      "Bash(cp \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/DjiH264Encoder/3rd/include/libyuv.h\" \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/3rd/DjiH264Encoder/include/\")",
+      "Bash(cp \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/DjiH264Encoder/3rd/lib/vpl.lib\" \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/3rd/DjiH264Encoder/lib/\")",
+      "Bash(cp \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/DjiH264Encoder/3rd/lib/yuv.lib\" \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/3rd/DjiH264Encoder/lib/\")",
+      "Read(//c/Users/younghowyou/AppData/Roaming/MVTec/HALCON-24.11-Progress-Steady/examples/extension_package/halconuser/examples/**)",
+      "Bash(ls \"d:/Desktop/Source/Halcon_Extension/Halcon_TcpWSL/bin/\"*.dll)",
+      "Bash(cmake --build . --config Debug --target Halcon_TcpWSL)"
+    ]
+  }
+}

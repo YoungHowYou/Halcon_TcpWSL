@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="24.11.1.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>* ============================================================</c>
+<c>* h264_sender.hdev</c>
+<c>* H264 编码发送端示例</c>
+<c>* 读取图像 -&gt; 缩放到 1280x720 -&gt; H264 编码 -&gt; TCP 发送</c>
+<c>* ============================================================</c>
+<c></c>
+<c>* 配置参数</c>
+<l>IP := '127.0.0.1'</l>
+<l>Port := 5000</l>
+<l>IsServer := 1</l>
+<c></c>
+<c>* 创建 TCP 连接（服务端模式，同时初始化 H264 编码器）</c>
+<l>WCreateConnection (IP, Port, IsServer, SocketID)</l>
+<c></c>
+<c>* 打开窗口用于预览</c>
+<l>* dev_open_window (0, 0, 640, 360, 'black', WindowHandle)</l>
+<l>dev_update_window ('off')</l>
+<c></c>
+<c>* 构建发送字典</c>
+<l>create_dict (SendDict)</l>
+<l>create_dict (CmdDict)</l>
+<l>set_dict_tuple (CmdDict, 'CMD', 0)</l>
+<c></c>
+<c>* 图像数据描述（通道=264 表示 H264 编码模式）</c>
+<l>create_dict (DataDict)</l>
+<l>set_dict_tuple (DataDict, '宽', 1280)</l>
+<l>set_dict_tuple (DataDict, '高', 720)</l>
+<l>set_dict_tuple (DataDict, '位深', 1)</l>
+<l>set_dict_tuple (DataDict, '通道', 264)</l>
+<l>set_dict_tuple (CmdDict, 'Data', DataDict)</l>
+<c></c>
+<c>* 循环发送图像</c>
+<l>list_image_files ('F:/MYXH/明场样本图/ChippingA1', 'default', [], ImageFiles)</l>
+<l>for Index := 0 to |ImageFiles| - 1 by 1</l>
+<c>    * 读取图像</c>
+<l>    read_image (Image, ImageFiles[Index])</l>
+<c></c>
+<c>    * 转为 3 通道（如果是灰度图）</c>
+<l>    count_channels (Image, NumChannels)</l>
+<l>    if (NumChannels == 1)</l>
+<l>        compose3 (Image, Image, Image, Image)</l>
+<l>    endif</l>
+<c></c>
+<c>    * 缩放到 1280x720（编码器固定分辨率）</c>
+<l>    zoom_image_size (Image, ImageResized, 1280, 720, 'bilinear')</l>
+<c></c>
+<c>    * 预览</c>
+<l>    dev_display (ImageResized)</l>
+<c></c>
+<c>    * 设置图像到字典并发送</c>
+<l>    set_dict_tuple (SendDict, '命令', CmdDict)</l>
+<l>    set_dict_object (ImageResized, SendDict, '图')</l>
+<l>    WSendData (SocketID, SendDict)</l>
+<c></c>
+<c>    * 控制帧率（约 30fps）</c>
+<l>    wait_seconds (0.033)</l>
+<l>endfor</l>
+<c></c>
+<c>* 关闭连接（同时销毁编码器和解码器）</c>
+<l>WCloseConnection (SocketID)</l>
+<l>dev_close_window ()</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
