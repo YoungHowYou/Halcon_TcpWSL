@@ -93,10 +93,10 @@ Herror HRecvData(Hproc_handle proc_handle)
     Hcpar timeout_ms;
     HGetSPar(proc_handle, 1, LONG_PAR, &socket_id, 1);
     HGetSPar(proc_handle, 2, LONG_PAR, &timeout_ms, 1);
-    Hcpar *dict;
+    const Hcpar *dict;
     INT4_8 num;
     HGetPPar(proc_handle, 3, &dict, &num);
-    HTuple hv_DictHandle(dict, 1);
+    HTuple hv_DictHandle(const_cast<Hcpar*>(dict), 1);
 
     char *jsontext = nullptr;
     char *data = nullptr;
@@ -147,9 +147,9 @@ Herror HRecvData(Hproc_handle proc_handle)
                 {
                     // 解码成功，生成3通道图像
                     HObject ImageR, ImageG, ImageB;
-                    GenImage1(&ImageR, "byte", dec_output.width, dec_output.height, (__int64)dec_output.r_plane);
-                    GenImage1(&ImageG, "byte", dec_output.width, dec_output.height, (__int64)dec_output.g_plane);
-                    GenImage1(&ImageB, "byte", dec_output.width, dec_output.height, (__int64)dec_output.b_plane);
+                    GenImage1(&ImageR, "byte", dec_output.width, dec_output.height, (Hlong)dec_output.r_plane);
+                    GenImage1(&ImageG, "byte", dec_output.width, dec_output.height, (Hlong)dec_output.g_plane);
+                    GenImage1(&ImageB, "byte", dec_output.width, dec_output.height, (Hlong)dec_output.b_plane);
                     Compose3(ImageR, ImageG, ImageB, &Image);
                 }
                 else
@@ -162,11 +162,11 @@ Herror HRecvData(Hproc_handle proc_handle)
             {
                 if (位深.L() == 1)
                 {
-                    GenImage1(&Image, "byte", 宽.L(), 高.L(), (__int64)data);
+                    GenImage1(&Image, "byte", 宽.L(), 高.L(), (Hlong)data);
                 }
                 else
                 {
-                    GenImage1(&Image, "uint2", 宽.L(), 高.L(), (__int64)data);
+                    GenImage1(&Image, "uint2", 宽.L(), 高.L(), (Hlong)data);
                 }
             }
             else
@@ -179,15 +179,15 @@ Herror HRecvData(Hproc_handle proc_handle)
 
                 if (位深.L() == 1)
                 {
-                    GenImage1(&ImageR, "byte", 宽.L(), 高.L(), (__int64)data);
-                    GenImage1(&ImageG, "byte", 宽.L(), 高.L(), (__int64)(data + Tw));
-                    GenImage1(&ImageB, "byte", 宽.L(), 高.L(), (__int64)(data + Tw * 2));
+                    GenImage1(&ImageR, "byte", 宽.L(), 高.L(), (Hlong)data);
+                    GenImage1(&ImageG, "byte", 宽.L(), 高.L(), (Hlong)(data + Tw));
+                    GenImage1(&ImageB, "byte", 宽.L(), 高.L(), (Hlong)(data + Tw * 2));
                 }
                 else
                 {
-                    GenImage1(&ImageR, "uint2", 宽.L(), 高.L(), (__int64)data);
-                    GenImage1(&ImageG, "uint2", 宽.L(), 高.L(), (__int64)(data + Tw));
-                    GenImage1(&ImageB, "uint2", 宽.L(), 高.L(), (__int64)(data + Tw * 2));
+                    GenImage1(&ImageR, "uint2", 宽.L(), 高.L(), (Hlong)data);
+                    GenImage1(&ImageG, "uint2", 宽.L(), 高.L(), (Hlong)(data + Tw));
+                    GenImage1(&ImageB, "uint2", 宽.L(), 高.L(), (Hlong)(data + Tw * 2));
                 }
                 Compose3(ImageR, ImageG, ImageB, &Image);
             }
@@ -212,11 +212,11 @@ Herror HSendData(Hproc_handle proc_handle)
     HGetSPar(proc_handle, 1, LONG_PAR, &socket_id, 1);
 
     // 获取字典（第2个输入参数）
-    Hcpar *dict;
+    const Hcpar *dict;
     INT4_8 num;
     HGetPPar(proc_handle, 2, &dict, &num); // 注意：这里是参数2！
 
-    HTuple hv_DictHandle(dict, 1);
+    HTuple hv_DictHandle(const_cast<Hcpar*>(dict), 1);
     HTuple dict_json;
     GetDictTuple(hv_DictHandle, u8"命令", &dict_json);
     HTuple Text_json;

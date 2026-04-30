@@ -10,10 +10,12 @@
 #include <vpl/mfxvideo++.h>
 #include <vpl/mfxcommon.h>
 
+#ifdef _WIN32
 // D3D11 前向声明
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11Texture2D;
+#endif
 
 // 内部实现类
 class EncoderImpl {
@@ -52,10 +54,16 @@ private:
     bool RGBToNV12(const uint8_t* r_plane, const uint8_t* g_plane, const uint8_t* b_plane);
     bool ProcessEncoding();
 
+#ifdef _WIN32
     // D3D11
     ID3D11Device* d3d11_device_ = nullptr;
     ID3D11DeviceContext* d3d11_context_ = nullptr;
     ID3D11Texture2D* d3d11_texture_ = nullptr;
+#else
+    void* d3d11_device_ = nullptr;
+    void* d3d11_context_ = nullptr;
+    void* d3d11_texture_ = nullptr;
+#endif
 
     // oneVPL
     MFXVideoSession* mfx_session_ = nullptr;

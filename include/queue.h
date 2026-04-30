@@ -1,7 +1,6 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include <windows.h>
 #include <mutex>
 #include <condition_variable>
 #include <stdlib.h>

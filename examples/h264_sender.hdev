@@ -35,7 +35,8 @@
 <l>set_dict_tuple (CmdDict, 'Data', DataDict)</l>
 <c></c>
 <c>* 循环发送图像</c>
-<l>list_image_files ('F:/MYXH/明场样本图/ChippingA1', 'default', [], ImageFiles)</l>
+<l>list_image_files ('/home/njsc/MVTec/HALCON-24.11-Progress-Steady/examples/images/card', 'default', [], ImageFiles)</l>
+<c></c>
 <l>for Index := 0 to |ImageFiles| - 1 by 1</l>
 <c>    * 读取图像</c>
 <l>    read_image (Image, ImageFiles[Index])</l>

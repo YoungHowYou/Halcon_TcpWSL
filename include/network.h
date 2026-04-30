@@ -1,12 +1,25 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-// Windows头文件必须在最前面
-#define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
-#include <ws2tcpip.h>
 #include <stdint.h>
 #include <stddef.h>
+
+#ifdef _WIN32
+  #define WIN32_LEAN_AND_MEAN
+  #include <winsock2.h>
+  #include <ws2tcpip.h>
+#else
+  #include <sys/types.h>
+  #include <sys/socket.h>
+  #include <netinet/in.h>
+  #include <arpa/inet.h>
+  #include <unistd.h>
+  #include <fcntl.h>
+  #include <errno.h>
+  using SOCKET = int;
+  #define INVALID_SOCKET (-1)
+  #define SOCKET_ERROR (-1)
+#endif
 
 #ifdef __cplusplus
 extern "C" {

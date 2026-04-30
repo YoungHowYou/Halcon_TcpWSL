@@ -1,5 +1,9 @@
 #include "Halcon.h"
-#define EXPORTS_API __declspec(dllexport)
+#ifdef _WIN32
+  #define EXPORTS_API __declspec(dllexport)
+#else
+  #define EXPORTS_API __attribute__((visibility("default")))
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,10 +1,12 @@
 #include "encoder_impl.h"
 
+#ifdef _WIN32
 // Windows/D3D11 头文件
 #include <windows.h>
 #include <d3d11.h>
 #include <dxgi.h>
 #include <dxgi1_2.h>
+#endif
 
 // libyuv 头文件
 #include <libyuv.h>
@@ -13,10 +15,13 @@
 #include <cstring>
 #include <iostream>
 #include <chrono>
+#include <thread>
 
+#ifdef _WIN32
 // 确保链接必要的库
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
+#endif
 
 // 对齐宏
 constexpr int ALIGN16(int x) { return (x + 15) & ~15; }
@@ -33,9 +38,11 @@ EncoderImpl::~EncoderImpl() {
         mfx_session_->Close();
         delete (MFXVideoSession*)mfx_session_;
     }
+#ifdef _WIN32
     if (d3d11_texture_) d3d11_texture_->Release();
     if (d3d11_context_) d3d11_context_->Release();
     if (d3d11_device_) d3d11_device_->Release();
+#endif
     delete encode_param_;
     delete mfx_bitstream_;
 }
@@ -79,6 +86,7 @@ bool EncoderImpl::Initialize(int width, int height, int fps, int bitrate_kbps) {
 }
 
 bool EncoderImpl::InitD3D11() {
+#ifdef _WIN32
     HRESULT hr;
     
     D3D_FEATURE_LEVEL feature_levels[] = {
@@ -153,6 +161,11 @@ bool EncoderImpl::InitD3D11() {
     }
 
     return true;
+#else
+    (void)width_;
+    (void)height_;
+    return true;
+#endif
 }
 
 bool EncoderImpl::InitVPL() {
@@ -352,7 +365,7 @@ bool EncoderImpl::EncodeFrame(const uint8_t* r_plane, const uint8_t* g_plane, co
         // 设备忙，等待重试
         int retries = 0;
         while (sts == MFX_WRN_DEVICE_BUSY && retries < 100) {
-            Sleep(1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             sts = ((MFXVideoENCODE*)mfx_encoder_)->EncodeFrameAsync(&ctrl, &surface, (mfxBitstream*)mfx_bitstream_, &sync_point);
             retries++;
         }

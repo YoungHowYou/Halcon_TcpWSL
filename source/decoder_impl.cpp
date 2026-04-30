@@ -1,14 +1,12 @@
 #include "decoder_impl.h"
 
-// Windows 头文件
-#include <windows.h>
-
 // libyuv 头文件
 #include <libyuv.h>
 
 // 标准库
 #include <cstring>
 #include <iostream>
+#include <thread>
 
 // 对齐宏
 constexpr int ALIGN16_DEC(int x) { return (x + 15) & ~15; }
@@ -294,7 +292,7 @@ bool DecoderImpl::DecodeFrame(const uint8_t* h264_data, int h264_size) {
     } else if (sts == MFX_WRN_DEVICE_BUSY) {
         int retries = 0;
         while (sts == MFX_WRN_DEVICE_BUSY && retries < 100) {
-            Sleep(1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             sts = mfx_decoder_->DecodeFrameAsync(
                 &mfx_bitstream_,
                 &surfaces_[surface_idx],
