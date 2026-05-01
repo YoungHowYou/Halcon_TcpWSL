@@ -325,7 +325,7 @@ Herror HSendData(Hproc_handle proc_handle)
         }
         if (ret != 0)
         {
-            return 10000 + ret; // 自定义错误码
+            return 10000 + ret; // 自定义错误码湖北
         }
     }
     else

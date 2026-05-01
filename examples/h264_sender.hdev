@@ -36,6 +36,9 @@
 <c></c>
 <c>* 循环发送图像</c>
 <l>list_image_files ('/home/njsc/MVTec/HALCON-24.11-Progress-Steady/examples/images/card', 'default', [], ImageFiles)</l>
+<l>while(1)</l>
+<c>    </c>
+<c></c>
 <c></c>
 <l>for Index := 0 to |ImageFiles| - 1 by 1</l>
 <c>    * 读取图像</c>
@@ -61,7 +64,7 @@
 <c>    * 控制帧率（约 30fps）</c>
 <l>    wait_seconds (0.033)</l>
 <l>endfor</l>
-<c></c>
+<l>endwhile</l>
 <c>* 关闭连接（同时销毁编码器和解码器）</c>
 <l>WCloseConnection (SocketID)</l>
 <l>dev_close_window ()</l>
