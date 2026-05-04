@@ -39,16 +39,22 @@ endif()
 project(Halcon_TcpWSL C CXX )
 set(ProjectName Halcon_TcpWSL)
 set(CMAKE_BUILD_TYPE Debug)
-# 禁止生成 Debug/Release 子目录，直接输出到 bin
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin")
+# 禁止生成 Debug/Release 子目录
+# Windows: 输出到 bin/；Linux: 直接输出到 lib/x64-linux（HALCON 扩展包加载位置）
+if(WIN32)
+  set(_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/bin")
+else()
+  set(_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/lib/x64-linux")
+endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${_OUTPUT_DIR}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${_OUTPUT_DIR}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${_OUTPUT_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${_OUTPUT_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${_OUTPUT_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${_OUTPUT_DIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${_OUTPUT_DIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${_OUTPUT_DIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${_OUTPUT_DIR}")
 # Append HALCON's cmake directory to the module path.
 # 优先从 HALCONEXAMPLES 取，但要兼容 shell 里写成字面量未展开（"$HALCONROOT/..."）
 # 的情况——这种情况退化到 HALCONROOT/examples 自己拼。
@@ -211,12 +217,13 @@ else()
     )
 
     # 把 bundled .so 目录烧进 RPATH，运行时即使不设 LD_LIBRARY_PATH 也能加载。
-    # $ORIGIN          → 用户把 .so 拷到 bin/ 同级时生效
-    # $ORIGIN/../3rd/… → 库放在工程原 3rd 目录里时生效（HALCON 加载 bin/lib*.so 时）
+    # 输出位置 lib/x64-linux/，相对工程根需要回退两级。
+    # $ORIGIN             → 用户把 .so 拷到产物同级时生效
+    # $ORIGIN/../../3rd/… → 库放在工程原 3rd 目录里时生效
     # 直接用 target_link_options 注入，避免 CMake 把 RPATH 自动剥掉
     target_link_options(${ProjectName} PRIVATE
         "LINKER:-rpath,\$ORIGIN"
-        "LINKER:-rpath,\$ORIGIN/../3rd/DjiH264Encoder/lib/x64-linux"
+        "LINKER:-rpath,\$ORIGIN/../../3rd/DjiH264Encoder/lib/x64-linux"
         "LINKER:--disable-new-dtags"
     )
 endif()
