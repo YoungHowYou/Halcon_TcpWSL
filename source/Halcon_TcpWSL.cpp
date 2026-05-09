@@ -93,7 +93,7 @@ Herror HRecvData(Hproc_handle proc_handle)
     Hcpar timeout_ms;
     HGetSPar(proc_handle, 1, LONG_PAR, &socket_id, 1);
     HGetSPar(proc_handle, 2, LONG_PAR, &timeout_ms, 1);
-    const Hcpar *dict;
+    Hcpar *dict;
     INT4_8 num;
     HGetPPar(proc_handle, 3, &dict, &num);
     HTuple hv_DictHandle(const_cast<Hcpar*>(dict), 1);
@@ -212,7 +212,7 @@ Herror HSendData(Hproc_handle proc_handle)
     HGetSPar(proc_handle, 1, LONG_PAR, &socket_id, 1);
 
     // 获取字典（第2个输入参数）
-    const Hcpar *dict;
+    Hcpar *dict;
     INT4_8 num;
     HGetPPar(proc_handle, 2, &dict, &num); // 注意：这里是参数2！
 
