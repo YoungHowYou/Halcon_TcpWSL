@@ -74,6 +74,14 @@ list(APPEND CMAKE_MODULE_PATH "${HALCONEXAMPLES}/cmake")
 # Include common settings for HALCON projects
 include(UseHALCON)
 
+# UseHALCON.cmake 默认置 CMAKE_SKIP_RPATH=TRUE（option WITHOUT_RPATH=ON），
+# 那会让 CMake 把所有 RPATH 相关属性和 -Wl,-rpath 链接选项一并丢掉，导致
+# 我们后面对 INSTALL_RPATH/BUILD_RPATH 或 -Wl,-rpath 的设置失效。
+# 这里强制打开，以便我们自己控制 $ORIGIN-相对的 RPATH。
+set(CMAKE_SKIP_RPATH FALSE)
+set(CMAKE_SKIP_INSTALL_RPATH FALSE)
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+
 # Support Linux builds with HALCON and thread libraries
 find_package(Threads REQUIRED)
 
@@ -178,19 +186,23 @@ else()
         message(FATAL_ERROR "Could not find halconcpp library. Please install HALCON or adjust HALCONROOT.")
     endif()
 
-    # Linux: 优先使用 3rd/ 里 bundled 的 oneVPL/libyuv，
-    # 没有再回退到系统包 (sudo apt install libvpl-dev libyuv-dev)。
+    # Linux: bundled 的 libvpl.so.2.9 编译时链接了 glibc 2.38，
+    # Ubuntu 22.04 (glibc 2.35) 上加载会失败，所以 libvpl 优先用系统包
+    # (apt install libvpl2 即可，ABI 同为 LIBVPL_2.0/2.1)。
+    # libyuv/libjpeg 没有 glibc 问题，仍优先 bundled。
     set(_BUNDLED_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rd/DjiH264Encoder/lib/x64-linux")
-    find_library(VPL_LIB NAMES vpl
-        PATHS ${_BUNDLED_LIB_DIR}
-        NO_DEFAULT_PATH)
+    # NAMES 带版本号，覆盖只装了 libvpl2 (没装 libvpl-dev) 的情况——
+    # 那种情况下系统路径里只有 libvpl.so.2 而没有无版本的 libvpl.so symlink。
+    find_library(VPL_LIB NAMES vpl libvpl.so.2)
     if(NOT VPL_LIB)
-        find_library(VPL_LIB NAMES vpl)
+        find_library(VPL_LIB NAMES vpl
+            PATHS ${_BUNDLED_LIB_DIR}
+            NO_DEFAULT_PATH)
     endif()
     if(NOT VPL_LIB)
         message(FATAL_ERROR
             "Could not find libvpl (oneVPL). "
-            "Bundled at ${_BUNDLED_LIB_DIR}/libvpl.so or install: sudo apt install libvpl-dev")
+            "Install: sudo apt install libvpl2  (or libvpl-dev for headers)")
     endif()
 
     find_library(YUV_LIB NAMES yuv
@@ -218,12 +230,17 @@ else()
 
     # 把 bundled .so 目录烧进 RPATH，运行时即使不设 LD_LIBRARY_PATH 也能加载。
     # 输出位置 lib/x64-linux/，相对工程根需要回退两级。
-    # $ORIGIN             → 用户把 .so 拷到产物同级时生效
-    # $ORIGIN/../../3rd/… → 库放在工程原 3rd 目录里时生效
-    # 直接用 target_link_options 注入，避免 CMake 把 RPATH 自动剥掉
+    #   $ORIGIN             → 用户把 .so 拷到产物同级时生效
+    #   $ORIGIN/../../3rd/… → 库放在工程原 3rd 目录里时生效
+    # 必须用 CMake 标准 RPATH 属性，不要写 target_link_options(... -Wl,-rpath,$ORIGIN)：
+    # 后者会经过 cmake_link_script 解析，$ORIGIN 被写成字面量 $$ORIGIN，loader 不识别。
+    # BUILD_WITH_INSTALL_RPATH=TRUE 让构建产物直接带上 INSTALL_RPATH，省去 install 步骤。
+    set_target_properties(${ProjectName} PROPERTIES
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "$ORIGIN;$ORIGIN/../../3rd/DjiH264Encoder/lib/x64-linux"
+        INSTALL_RPATH_USE_LINK_PATH FALSE
+    )
     target_link_options(${ProjectName} PRIVATE
-        "LINKER:-rpath,\$ORIGIN"
-        "LINKER:-rpath,\$ORIGIN/../../3rd/DjiH264Encoder/lib/x64-linux"
         "LINKER:--disable-new-dtags"
     )
 endif()
